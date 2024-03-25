@@ -6,11 +6,11 @@ import { MockLegacyUserRepository } from "../../infrastructure/MockLegacyUserRep
 import { MockUserRepository } from "../../infrastructure/MockUserRepository";
 
 describe("UserRegistrar should", () => {
-	const repository = new MockUserRepository();
 	const legacyRepository = new MockLegacyUserRepository();
+	const repository = new MockUserRepository();
 	const eventBus = new MockEventBus();
 
-	const userRegistrar = new UserRegistrar(repository, legacyRepository, eventBus);
+	const userRegistrar = new UserRegistrar(legacyRepository, repository, eventBus);
 
 	it("register a valid user", async () => {
 		const expectedUser = UserMother.create();
@@ -18,8 +18,8 @@ describe("UserRegistrar should", () => {
 
 		const expectedDomainEvent = UserRegisteredDomainEventMother.create(expectedUserPrimitives);
 
-		repository.shouldSave(expectedUser);
 		legacyRepository.shouldSave(expectedUser);
+		repository.shouldSave(expectedUser);
 		eventBus.shouldPublish([expectedDomainEvent]);
 
 		await userRegistrar.registrar(

@@ -5,13 +5,17 @@ import { MySqlLegacyUserRepository } from "../../../../contexts/rrss/users/infra
 import { MySqlUserRepository } from "../../../../contexts/rrss/users/infrastructure/MySqlUserRepository";
 import { InMemoryEventBus } from "../../../../contexts/shared/infrastructure/bus/InMemoryEventBus";
 import { MariaDBConnection } from "../../../../contexts/shared/infrastructure/MariaDBConnection";
+import { TransactionalDecorator } from "../../../../contexts/shared/infrastructure/TransactionalDecorator";
 
 const connection = new MariaDBConnection();
-const registrar = new UserRegistrar(
-	new MySqlUserRepository(connection),
-	new MySqlLegacyUserRepository(connection),
-	new InMemoryEventBus([]),
-);
+const registrar = new TransactionalDecorator(
+	new UserRegistrar(
+		new MySqlLegacyUserRepository(connection),
+		new MySqlUserRepository(connection),
+		new InMemoryEventBus([]),
+	),
+	connection,
+).getProxy();
 
 export async function PUT(
 	request: NextRequest,

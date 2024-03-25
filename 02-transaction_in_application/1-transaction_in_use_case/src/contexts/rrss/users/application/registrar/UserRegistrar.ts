@@ -6,8 +6,8 @@ import { UserRepository } from "../../domain/UserRepository";
 
 export class UserRegistrar {
 	constructor(
-		private readonly repository: UserRepository,
 		private readonly legacyRepository: LegacyUserRepository,
+		private readonly repository: UserRepository,
 		private readonly connection: DatabaseConnection,
 		private readonly eventBus: EventBus,
 	) {}
@@ -18,8 +18,8 @@ export class UserRegistrar {
 
 			const user = User.create(id, name, email, profilePicture);
 
-			await this.repository.save(user);
 			await this.legacyRepository.save(user);
+			await this.repository.save(user);
 
 			await this.eventBus.publish(user.pullDomainEvents());
 

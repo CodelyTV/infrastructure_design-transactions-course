@@ -7,14 +7,14 @@ import { MockLegacyUserRepository } from "../../infrastructure/MockLegacyUserRep
 import { MockUserRepository } from "../../infrastructure/MockUserRepository";
 
 describe("UserRegistrar should", () => {
-	const repository = new MockUserRepository();
 	const legacyRepository = new MockLegacyUserRepository();
+	const repository = new MockUserRepository();
 	const databaseConnection = new MockDatabaseConnection();
 	const eventBus = new MockEventBus();
 
 	const userRegistrar = new UserRegistrar(
-		repository,
 		legacyRepository,
+		repository,
 		databaseConnection,
 		eventBus,
 	);
@@ -26,8 +26,8 @@ describe("UserRegistrar should", () => {
 		const expectedDomainEvent = UserRegisteredDomainEventMother.create(expectedUserPrimitives);
 
 		databaseConnection.shouldBeginTransaction();
-		repository.shouldSave(expectedUser);
 		legacyRepository.shouldSave(expectedUser);
+		repository.shouldSave(expectedUser);
 		eventBus.shouldPublish([expectedDomainEvent]);
 		databaseConnection.shouldCommit();
 
@@ -44,8 +44,8 @@ describe("UserRegistrar should", () => {
 		const expectedUserPrimitives = expectedUser.toPrimitives();
 
 		databaseConnection.shouldBeginTransaction();
-		repository.shouldSave(expectedUser);
 		legacyRepository.shouldThrowErrorSaving(expectedUser);
+		repository.shouldSave(expectedUser);
 		databaseConnection.shouldRollback();
 
 		await expect(
