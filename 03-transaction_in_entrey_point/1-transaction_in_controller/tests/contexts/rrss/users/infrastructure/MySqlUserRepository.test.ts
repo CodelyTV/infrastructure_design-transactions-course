@@ -8,10 +8,7 @@ describe("MySqlUserRepository should", () => {
 	const connection = new MariaDBConnection();
 	const repository = new MySqlUserRepository(connection);
 
-	beforeEach(async () => {
-		await connection.truncate("rrss__users");
-		await connection.truncate("legacy__users");
-	});
+	beforeEach(async () => await connection.truncate("rrss__users"));
 	afterAll(async () => await connection.close());
 
 	it("save a user", async () => {

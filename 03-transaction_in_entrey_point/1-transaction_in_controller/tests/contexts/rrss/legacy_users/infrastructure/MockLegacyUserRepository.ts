@@ -1,11 +1,11 @@
-import { LegacyUserRepository } from "../../../../../src/contexts/rrss/users/domain/LegacyUserRepository";
-import { User } from "../../../../../src/contexts/rrss/users/domain/User";
+import { LegacyUser } from "../../../../../src/contexts/rrss/legacy_users/domain/LegacyUser";
+import { LegacyUserRepository } from "../../../../../src/contexts/rrss/legacy_users/domain/LegacyUserRepository";
 
 export class MockLegacyUserRepository implements LegacyUserRepository {
 	private readonly mockSave = jest.fn();
 	private withError = false;
 
-	async save(user: User): Promise<void> {
+	async save(user: LegacyUser): Promise<void> {
 		expect(this.mockSave).toHaveBeenCalledWith(user.toPrimitives());
 
 		if (this.withError) {
@@ -16,12 +16,7 @@ export class MockLegacyUserRepository implements LegacyUserRepository {
 		return Promise.resolve();
 	}
 
-	shouldSave(user: User): void {
+	shouldSave(user: LegacyUser): void {
 		this.mockSave(user.toPrimitives());
-	}
-
-	shouldThrowErrorSaving(user: User): void {
-		this.mockSave(user.toPrimitives());
-		this.withError = true;
 	}
 }
