@@ -1,9 +1,6 @@
 import { Criteria } from "../../../shared/domain/criteria/Criteria";
 import { CriteriaToSqlConverter } from "../../../shared/infrastructure/criteria/CriteriaToSqlConverter";
-import {
-	MariaDBConnection,
-	MinimalConnection,
-} from "../../../shared/infrastructure/MariaDBConnection";
+import { MariaDBConnection } from "../../../shared/infrastructure/MariaDBConnection";
 import { User } from "../domain/User";
 import { UserId } from "../domain/UserId";
 import { UserRepository } from "../domain/UserRepository";
@@ -20,7 +17,7 @@ export class MySqlUserRepository implements UserRepository {
 	constructor(private readonly connection: MariaDBConnection) {}
 
 	async save(user: User): Promise<void> {
-		await this.connection.transactional(async (connection: MinimalConnection) => {
+		await this.connection.transactional(async (connection: MariaDBConnection) => {
 			const userPrimitives = user.toPrimitives();
 
 			const query = `
@@ -35,8 +32,8 @@ export class MySqlUserRepository implements UserRepository {
 
 			const legacyQuery = `INSERT INTO legacy__users (id, name) VALUES ('${userPrimitives.id}', '${userPrimitives.name}');`;
 
-			await connection.query(query);
-			await connection.query(legacyQuery);
+			await connection.execute(query);
+			await connection.execute(legacyQuery);
 		});
 	}
 

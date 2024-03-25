@@ -1,6 +1,6 @@
 import { createPool, Pool } from "mariadb";
 
-export interface MinimalConnection {
+interface MinimalConnection {
 	query: (sql: string) => Promise<unknown>;
 	beginTransaction: () => Promise<void>;
 	commit: () => Promise<void>;
@@ -26,49 +26,34 @@ export class MariaDBConnection {
 	}
 
 	async searchOne<T>(query: string): Promise<T | null> {
-		try {
-			const conn = await this.getConnection();
-			const rows = (await conn.query(query)) as T[];
+		const conn = await this.getConnection();
+		const rows = (await conn.query(query)) as T[];
 
-			return rows[0] ?? null;
-		} finally {
-			await this.connection?.end();
-			this.connection = null;
-		}
+		return rows[0] ?? null;
 	}
 
 	async searchAll<T>(query: string): Promise<T[]> {
-		try {
-			const conn = await this.getConnection();
+		const conn = await this.getConnection();
 
-			return (await conn.query(query)) as T[];
-		} finally {
-			await this.connection?.end();
-			this.connection = null;
-		}
+		return (await conn.query(query)) as T[];
 	}
 
 	async execute(query: string): Promise<void> {
-		try {
-			const conn = await this.getConnection();
-			await conn.query(query);
-		} finally {
-			await this.connection?.end();
-			this.connection = null;
-		}
+		const conn = await this.getConnection();
+		await conn.query(query);
 	}
 
 	async truncate(users: string): Promise<void> {
 		await this.execute(`TRUNCATE TABLE ${users}`);
 	}
 
-	async transactional<T>(work: (connection: MinimalConnection) => Promise<T>): Promise<T> {
+	async transactional<T>(work: (connection: MariaDBConnection) => Promise<T>): Promise<T> {
 		const connection = await this.getConnection();
 
 		try {
 			await connection.beginTransaction();
 
-			const result = await work(connection);
+			const result = await work(this);
 
 			await connection.commit();
 
@@ -77,9 +62,6 @@ export class MariaDBConnection {
 			await connection.rollback();
 
 			throw error;
-		} finally {
-			await connection.end();
-			this.connection = null;
 		}
 	}
 
@@ -91,16 +73,10 @@ export class MariaDBConnection {
 
 	async commit(): Promise<void> {
 		await this.connection?.commit();
-		await this.connection?.end();
-
-		this.connection = null;
 	}
 
 	async rollback(): Promise<void> {
 		await this.connection?.rollback();
-		await this.connection?.end();
-
-		this.connection = null;
 	}
 
 	async close(): Promise<void> {
