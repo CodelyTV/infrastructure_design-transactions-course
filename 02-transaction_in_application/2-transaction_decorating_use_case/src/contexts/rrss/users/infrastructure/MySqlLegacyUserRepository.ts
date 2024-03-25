@@ -2,7 +2,7 @@ import { MariaDBConnection } from "../../../shared/infrastructure/MariaDBConnect
 import { LegacyUserRepository } from "../domain/LegacyUserRepository";
 import { User } from "../domain/User";
 
-export class MySqlUserRepository implements LegacyUserRepository {
+export class MySqlLegacyUserRepository implements LegacyUserRepository {
 	constructor(private readonly connection: MariaDBConnection) {}
 
 	async save(user: User): Promise<void> {

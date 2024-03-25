@@ -8,9 +8,6 @@ import { MariaDBConnection } from "../../../contexts/shared/infrastructure/Maria
 const searcher = new UsersByCriteriaSearcher(new MySqlUserRepository(new MariaDBConnection()));
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-	// eslint-disable-next-line no-console
-	console.log("Pidiendo /api/users");
-
 	const { searchParams } = new URL(request.url);
 
 	const filters = SearchParamsCriteriaFiltersParser.parse(searchParams);
