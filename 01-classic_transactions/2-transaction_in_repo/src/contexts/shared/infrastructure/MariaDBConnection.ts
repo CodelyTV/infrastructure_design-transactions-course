@@ -63,22 +63,22 @@ export class MariaDBConnection {
 	}
 
 	async transactional<T>(work: (connection: MinimalConnection) => Promise<T>): Promise<T> {
-		this.connection = await this.getConnection();
+		const connection = await this.getConnection();
 
 		try {
-			await this.connection.beginTransaction();
+			await connection.beginTransaction();
 
-			const result = await work(this.connection);
+			const result = await work(connection);
 
-			await this.connection.commit();
+			await connection.commit();
 
 			return result;
 		} catch (error) {
-			await this.connection.rollback();
+			await connection.rollback();
 
 			throw error;
 		} finally {
-			await this.connection.end();
+			await connection.end();
 			this.connection = null;
 		}
 	}
