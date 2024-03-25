@@ -8,14 +8,14 @@ import { MariaDBConnection } from "../../../../contexts/shared/infrastructure/Ma
 import { TransactionalDecorator } from "../../../../contexts/shared/infrastructure/TransactionalDecorator";
 
 const connection = new MariaDBConnection();
-const registrar = new TransactionalDecorator(
+const registrar = TransactionalDecorator.decorate(
 	new UserRegistrar(
 		new MySqlLegacyUserRepository(connection),
 		new MySqlUserRepository(connection),
 		new InMemoryEventBus([]),
 	),
 	connection,
-).getProxy();
+);
 
 export async function PUT(
 	request: NextRequest,

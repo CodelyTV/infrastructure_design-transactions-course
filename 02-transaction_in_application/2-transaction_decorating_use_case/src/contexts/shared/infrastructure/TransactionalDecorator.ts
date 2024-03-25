@@ -1,28 +1,23 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any,@typescript-eslint/ban-ts-comment,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-return */
 import { DatabaseConnection } from "../domain/DatabaseConnection";
 
-export class TransactionalDecorator<T> {
-	constructor(
-		private readonly decorated: T,
-		private readonly connection: DatabaseConnection,
-	) {}
-
-	getProxy(): T {
+export class TransactionalDecorator {
+	static decorate<T>(decorated: T, connection: DatabaseConnection): T {
 		// @ts-ignore
-		return new Proxy(this.decorated, {
+		return new Proxy(decorated, {
 			get: (target, propKey, receiver) => {
 				// @ts-ignore
 				const originalMethod = target[propKey];
 				if (typeof originalMethod === "function") {
 					return async (...args: any[]) => {
 						try {
-							await this.connection.beginTransaction();
+							await connection.beginTransaction();
 							const result = await originalMethod.apply(target, args);
-							await this.connection.commit();
+							await connection.commit();
 
 							return result;
 						} catch (error) {
-							await this.connection.rollback();
+							await connection.rollback();
 							throw error;
 						}
 					};
