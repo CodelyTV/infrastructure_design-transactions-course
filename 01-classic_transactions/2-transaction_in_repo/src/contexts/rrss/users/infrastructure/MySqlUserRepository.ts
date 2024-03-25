@@ -1,6 +1,9 @@
 import { Criteria } from "../../../shared/domain/criteria/Criteria";
 import { CriteriaToSqlConverter } from "../../../shared/infrastructure/criteria/CriteriaToSqlConverter";
-import { MariaDBConnection } from "../../../shared/infrastructure/MariaDBConnection";
+import {
+	MariaDBConnection,
+	MinimalConnection,
+} from "../../../shared/infrastructure/MariaDBConnection";
 import { User } from "../domain/User";
 import { UserId } from "../domain/UserId";
 import { UserRepository } from "../domain/UserRepository";
@@ -17,11 +20,10 @@ export class MySqlUserRepository implements UserRepository {
 	constructor(private readonly connection: MariaDBConnection) {}
 
 	async save(user: User): Promise<void> {
-		const connection = await this.connection.beginTransaction();
+		await this.connection.transactional(async (connection: MinimalConnection) => {
+			const userPrimitives = user.toPrimitives();
 
-		const userPrimitives = user.toPrimitives();
-
-		const query = `
+			const query = `
 			INSERT INTO rrss__users (id, name, email, profile_picture, status)
 			VALUES (
 						   '${userPrimitives.id}',
@@ -30,18 +32,12 @@ export class MySqlUserRepository implements UserRepository {
 						   '${userPrimitives.profilePicture}',
 						   '${userPrimitives.status.valueOf()}'
 				   );`;
-
-		try {
-			await this.connection.execute(query);
-			await this.connection.commit();
-		} catch (error) {
-			await this.connection.rollback();
-			throw error;
-		}
+			await connection.query(query);
+		});
 	}
 
 	async search(id: UserId): Promise<User | null> {
-		const query = `SELECT id, name, email, profile_picture FROM rrss__users WHERE id = '${id.value}';`;
+		const query = `SELECT id, name, email, profile_picture, status FROM rrss__users WHERE id = '${id.value}';`;
 
 		const result = await this.connection.searchOne<DatabaseUser>(query);
 
@@ -66,9 +62,14 @@ export class MySqlUserRepository implements UserRepository {
 		const converter = new CriteriaToSqlConverter();
 
 		const result = await this.connection.searchAll<DatabaseUser>(
-			converter.convert(["id", "name", "email", "profile_picture"], "rrss__users", criteria, {
-				fullname: "name",
-			}),
+			converter.convert(
+				["id", "name", "email", "profile_picture", "status"],
+				"rrss__users",
+				criteria,
+				{
+					fullname: "name",
+				},
+			),
 		);
 
 		return result.map((user) =>

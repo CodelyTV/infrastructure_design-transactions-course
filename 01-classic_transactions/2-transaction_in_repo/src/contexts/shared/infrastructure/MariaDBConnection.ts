@@ -1,6 +1,6 @@
 import { createPool, Pool } from "mariadb";
 
-interface MinimalConnection {
+export interface MinimalConnection {
 	query: (sql: string) => Promise<unknown>;
 	beginTransaction: () => Promise<void>;
 	commit: () => Promise<void>;
@@ -26,41 +26,35 @@ export class MariaDBConnection {
 	}
 
 	async searchOne<T>(query: string): Promise<T | null> {
-		let conn: MinimalConnection | null = null;
 		try {
-			conn = (await this.pool.getConnection()) as MinimalConnection;
+			const conn = await this.getConnection();
 			const rows = (await conn.query(query)) as T[];
 
 			return rows[0] ?? null;
 		} finally {
-			if (conn) {
-				await conn.end();
-			}
+			await this.connection?.end();
+			this.connection = null;
 		}
 	}
 
 	async searchAll<T>(query: string): Promise<T[]> {
-		let conn: MinimalConnection | null = null;
 		try {
-			conn = (await this.pool.getConnection()) as MinimalConnection;
+			const conn = await this.getConnection();
 
 			return (await conn.query(query)) as T[];
 		} finally {
-			if (conn) {
-				await conn.end();
-			}
+			await this.connection?.end();
+			this.connection = null;
 		}
 	}
 
 	async execute(query: string): Promise<void> {
-		let conn: MinimalConnection | null = null;
 		try {
-			conn = (await this.pool.getConnection()) as MinimalConnection;
+			const conn = await this.getConnection();
 			await conn.query(query);
 		} finally {
-			if (conn) {
-				await conn.end();
-			}
+			await this.connection?.end();
+			this.connection = null;
 		}
 	}
 
@@ -68,26 +62,54 @@ export class MariaDBConnection {
 		await this.execute(`TRUNCATE TABLE ${users}`);
 	}
 
-	async beginTransaction(): Promise<void> {
-		const connection = (await this.pool.getConnection()) as MinimalConnection;
-		await connection.beginTransaction();
+	async transactional<T>(work: (connection: MinimalConnection) => Promise<T>): Promise<T> {
+		this.connection = await this.getConnection();
 
-		this.connection = connection;
+		try {
+			await this.connection.beginTransaction();
+
+			const result = await work(this.connection);
+
+			await this.connection.commit();
+
+			return result;
+		} catch (error) {
+			await this.connection.rollback();
+
+			throw error;
+		}
+	}
+
+	async beginTransaction(): Promise<void> {
+		this.connection = await this.getConnection();
+
+		await this.connection.beginTransaction();
 	}
 
 	async commit(): Promise<void> {
 		await this.connection?.commit();
 		await this.connection?.end();
+
+		this.connection = null;
 	}
 
 	async rollback(): Promise<void> {
 		await this.connection?.rollback();
 		await this.connection?.end();
+		this.connection = null;
 	}
 
 	async close(): Promise<void> {
 		if (this.poolInstance !== null) {
 			await this.pool.end();
 		}
+	}
+
+	private async getConnection(): Promise<MinimalConnection> {
+		if (!this.connection) {
+			this.connection = (await this.pool.getConnection()) as MinimalConnection;
+		}
+
+		return this.connection;
 	}
 }
