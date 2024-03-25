@@ -17,10 +17,9 @@ export class MySqlUserRepository implements UserRepository {
 	constructor(private readonly connection: MariaDBConnection) {}
 
 	async save(user: User): Promise<void> {
-		await this.connection.transactional(async (connection: MariaDBConnection) => {
-			const userPrimitives = user.toPrimitives();
+		const userPrimitives = user.toPrimitives();
 
-			const query = `
+		const query = `
 			INSERT INTO rrss__users (id, name, email, profile_picture, status)
 			VALUES (
 				'${userPrimitives.id}',
@@ -30,11 +29,7 @@ export class MySqlUserRepository implements UserRepository {
 				'${userPrimitives.status.valueOf()}'
 			);`;
 
-			const legacyQuery = `INSERT INTO legacy__users (id, name) VALUES ('${userPrimitives.id}', '${userPrimitives.name}');`;
-
-			await connection.execute(query);
-			await connection.execute(legacyQuery);
-		});
+		await this.connection.execute(query);
 	}
 
 	async search(id: UserId): Promise<User | null> {

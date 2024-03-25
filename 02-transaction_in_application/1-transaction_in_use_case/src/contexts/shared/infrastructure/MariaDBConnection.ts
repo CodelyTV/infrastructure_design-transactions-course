@@ -1,5 +1,7 @@
 import { createPool, Pool } from "mariadb";
 
+import { DatabaseConnection } from "../domain/DatabaseConnection";
+
 interface MinimalConnection {
 	query: (sql: string) => Promise<unknown>;
 	beginTransaction: () => Promise<void>;
@@ -8,7 +10,7 @@ interface MinimalConnection {
 	end: () => Promise<void>;
 }
 
-export class MariaDBConnection {
+export class MariaDBConnection implements DatabaseConnection {
 	private poolInstance: Pool | null = null;
 	private connection: MinimalConnection | null = null;
 
@@ -43,26 +45,8 @@ export class MariaDBConnection {
 		await conn.query(query);
 	}
 
-	async truncate(users: string): Promise<void> {
-		await this.execute(`TRUNCATE TABLE ${users}`);
-	}
-
-	async transactional<T>(work: (connection: MariaDBConnection) => Promise<T>): Promise<T> {
-		const connection = await this.getConnection();
-
-		try {
-			await connection.beginTransaction();
-
-			const result = await work(this);
-
-			await connection.commit();
-
-			return result;
-		} catch (error) {
-			await connection.rollback();
-
-			throw error;
-		}
+	async truncate(table: string): Promise<void> {
+		await this.execute(`TRUNCATE TABLE ${table}`);
 	}
 
 	async beginTransaction(): Promise<void> {
