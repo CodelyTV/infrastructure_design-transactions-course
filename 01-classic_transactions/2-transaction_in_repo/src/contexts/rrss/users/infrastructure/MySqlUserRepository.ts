@@ -32,6 +32,7 @@ export class MySqlUserRepository implements UserRepository {
 						   '${userPrimitives.profilePicture}',
 						   '${userPrimitives.status.valueOf()}'
 				   );`;
+
 			await connection.query(query);
 		});
 	}

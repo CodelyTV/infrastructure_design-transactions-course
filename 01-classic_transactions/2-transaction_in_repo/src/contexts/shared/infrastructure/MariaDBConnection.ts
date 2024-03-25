@@ -77,6 +77,9 @@ export class MariaDBConnection {
 			await this.connection.rollback();
 
 			throw error;
+		} finally {
+			await this.connection.end();
+			this.connection = null;
 		}
 	}
 
@@ -96,6 +99,7 @@ export class MariaDBConnection {
 	async rollback(): Promise<void> {
 		await this.connection?.rollback();
 		await this.connection?.end();
+
 		this.connection = null;
 	}
 
