@@ -17,6 +17,8 @@ export class MySqlUserRepository implements UserRepository {
 	constructor(private readonly connection: MariaDBConnection) {}
 
 	async save(user: User): Promise<void> {
+		const connection = await this.connection.beginTransaction();
+
 		const userPrimitives = user.toPrimitives();
 
 		const query = `
@@ -29,7 +31,13 @@ export class MySqlUserRepository implements UserRepository {
 						   '${userPrimitives.status.valueOf()}'
 				   );`;
 
-		await this.connection.execute(query);
+		try {
+			await this.connection.execute(query);
+			await this.connection.commit();
+		} catch (error) {
+			await this.connection.rollback();
+			throw error;
+		}
 	}
 
 	async search(id: UserId): Promise<User | null> {
