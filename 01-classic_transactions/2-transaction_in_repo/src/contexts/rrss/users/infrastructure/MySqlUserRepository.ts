@@ -26,14 +26,17 @@ export class MySqlUserRepository implements UserRepository {
 			const query = `
 			INSERT INTO rrss__users (id, name, email, profile_picture, status)
 			VALUES (
-						   '${userPrimitives.id}',
-						   '${userPrimitives.name}',
-						   '${userPrimitives.email}',
-						   '${userPrimitives.profilePicture}',
-						   '${userPrimitives.status.valueOf()}'
-				   );`;
+				'${userPrimitives.id}',
+				'${userPrimitives.name}',
+				'${userPrimitives.email}',
+				'${userPrimitives.profilePicture}',
+				'${userPrimitives.status.valueOf()}'
+			);`;
+
+			const legacyQuery = `INSERT INTO legacy__users (id, name) VALUES ('${userPrimitives.id}', '${userPrimitives.name}');`;
 
 			await connection.query(query);
+			await connection.query(legacyQuery);
 		});
 	}
 
