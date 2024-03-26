@@ -47,13 +47,13 @@ export class MariaDBConnection {
 		await this.execute(`TRUNCATE TABLE ${users}`);
 	}
 
-	async transactional<T>(work: (connection: MariaDBConnection) => Promise<T>): Promise<T> {
+	async transactional<T>(fn: (connection: MariaDBConnection) => Promise<T>): Promise<T> {
 		const connection = await this.getConnection();
 
 		try {
 			await connection.beginTransaction();
 
-			const result = await work(this);
+			const result = await fn(this);
 
 			await connection.commit();
 
