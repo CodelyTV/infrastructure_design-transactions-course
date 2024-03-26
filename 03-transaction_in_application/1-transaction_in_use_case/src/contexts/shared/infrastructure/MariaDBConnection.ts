@@ -10,7 +10,7 @@ interface MinimalConnection {
 	end: () => Promise<void>;
 }
 
-export class MariaDBConnection implements DatabaseConnection {
+export class MariaDBConnection extends DatabaseConnection {
 	private poolInstance: Pool | null = null;
 	private connection: MinimalConnection | null = null;
 
