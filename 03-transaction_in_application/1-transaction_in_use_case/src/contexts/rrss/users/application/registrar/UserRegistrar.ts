@@ -13,21 +13,13 @@ export class UserRegistrar {
 	) {}
 
 	async registrar(id: string, name: string, email: string, profilePicture: string): Promise<void> {
-		try {
-			await this.connection.beginTransaction();
-
+		await this.connection.transactional(async () => {
 			const user = User.create(id, name, email, profilePicture);
 
-			await this.legacyRepository.save(user);
 			await this.repository.save(user);
+			await this.legacyRepository.save(user);
 
 			await this.eventBus.publish(user.pullDomainEvents());
-
-			await this.connection.commit();
-		} catch (error) {
-			await this.connection.rollback();
-
-			throw error;
-		}
+		});
 	}
 }
